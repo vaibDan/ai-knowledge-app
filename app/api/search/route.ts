@@ -17,12 +17,12 @@ export async function GET(req: Request) {
 
     // 2. Perform similarity search
     const results = await prisma.$queryRaw`
-  SELECT id, title, content,
+  SELECT content, "documentId",
         embedding <-> ${vector}::vector AS distance
-  FROM "Document"
-  WHERE embedding <-> ${vector}::vector < 1
+  FROM "Chunk"
+  WHERE embedding <-> ${vector}::vector < 0.6
   ORDER BY embedding <-> ${vector}::vector
-  LIMIT 5;
+  LIMIT 10;
 `;
 
     return NextResponse.json({
