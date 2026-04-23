@@ -42,3 +42,21 @@ model Chunk {
 
   createdAt  DateTime @default(now())
 }
+
+model Chat {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  messages  Message[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  role      String   // "user" | "assistant"
+  content   String
+
+  chatId    String
+  chat      Chat     @relation(fields: [chatId], references: [id])
+
+  createdAt DateTime @default(now())
+}

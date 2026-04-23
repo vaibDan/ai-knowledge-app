@@ -6,11 +6,33 @@ import { NextResponse } from "next/server";
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
 
 export async function POST(req: Request) {
-    const { question } = await req.json();
+    const { question, chatId } = await req.json();
 
     if (!question) {
         return NextResponse.json({ error: "Question required" }, { status: 400 });
     }
+    await prisma.chat.upsert({
+        where: { id: chatId },
+        update: {},
+        create: { id: chatId },
+    });
+    await prisma.message.create({
+        data: {
+            role: "user",
+            content: question,
+            chatId,
+        },
+    });
+
+    const history = await prisma.message.findMany({
+        where: { chatId },
+        orderBy: { createdAt: "asc" },
+        take: 10, // limit context
+    });
+
+    const historyText = history
+        .map((m) => `${m.role}: ${m.content}`)
+        .join("\n");
 
     // 1. Embed user query
     const embedding = await generateEmbedding(question);
@@ -43,9 +65,9 @@ You are an AI assistant with access to the following knowledge,
 If the context is relevant, use it.
 If the context is empty or irrelevant, answer normally.
 
+Conversation:${historyText}
 
-
-${context}
+Context:${context}
 
 Question: ${question}
 
@@ -70,14 +92,25 @@ Answer clearly and concisely.
     const stream = await model.generateContentStream(prompt);
 
     const encoder = new TextEncoder();
+    let fullAnswer = "";
 
     const readable = new ReadableStream({
         async start(controller) {
             for await (const chunk of stream.stream) {
                 const text = chunk.text();
+                fullAnswer += text;
                 controller.enqueue(encoder.encode(text));
             }
             controller.close();
+
+            // Save the full assistant message after streaming
+            await prisma.message.create({
+                data: {
+                    role: "assistant",
+                    content: fullAnswer,
+                    chatId,
+                },
+            });
         },
     });
 

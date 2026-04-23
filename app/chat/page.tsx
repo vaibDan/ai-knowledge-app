@@ -13,6 +13,7 @@ export default function ChatPage() {
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const bottomRef = useRef<HTMLDivElement>(null);
+    const [chatId] = useState(() => crypto.randomUUID());
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -31,7 +32,7 @@ export default function ChatPage() {
         try {
             const res = await fetch("/api/chat", {
                 method: "POST",
-                body: JSON.stringify({ question: currentInput }),
+                body: JSON.stringify({ question: input, chatId }),
             });
 
             if (!res.ok) {
@@ -88,7 +89,11 @@ export default function ChatPage() {
                             : "bg-gray-100 text-black text-left"
                             }`}
                     >
-                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        {msg.role === "user" ? (
+                            msg.content
+                        ) : (
+                                <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        )}
                     </div>
                 ))}
 
