@@ -1,4 +1,4 @@
-import  prisma  from "@/app/lib/db";
+import prisma from "@/app/lib/db";
 import { generateEmbedding } from "@/app/lib/embedding";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
@@ -25,6 +25,7 @@ export async function POST(req: Request) {
   ` as { content: string }[];
 
     console.log("Retrieved chunks:", results);
+    console.log(results)
 
     // 3. Build context
     const context = results.map(r => r.content).join("\n\n");
@@ -33,9 +34,9 @@ export async function POST(req: Request) {
     // 4. Build prompt
     const prompt = `
 You are an AI assistant with access to the following knowledge,
-Answer ONLY using the provided context.
-Do NOT add external knowledge.
-If unsure, say "I don't know".
+
+If the context is relevant, use it.
+If the context is empty or irrelevant, answer normally.
 
 
 
@@ -47,13 +48,37 @@ Answer clearly and concisely.
 
 `;
 
-    // 5. Call LLM
-    const model = genAI.getGenerativeModel({ model: "gemma-4-31b-it" });
+    //     // 5. Call LLM
+    //     const model = genAI.getGenerativeModel({ model: "gemini-flash-lite-latest" });
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
+    //     const result = await model.generateContent(prompt);
+    //     const response = await result.response;
 
-    return NextResponse.json({
-        answer: response.text(),
+    //     return NextResponse.json({
+    //         answer: response.text(),
+    //     });
+    // }
+
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+
+    // 3. Stream response
+    const stream = await model.generateContentStream(prompt);
+
+    const encoder = new TextEncoder();
+
+    const readable = new ReadableStream({
+        async start(controller) {
+            for await (const chunk of stream.stream) {
+                const text = chunk.text();
+                controller.enqueue(encoder.encode(text));
+            }
+            controller.close();
+        },
+    });
+
+    return new Response(readable, {
+        headers: {
+            "Content-Type": "text/plain",
+        },
     });
 }
