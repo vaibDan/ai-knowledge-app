@@ -28,7 +28,12 @@ export async function POST(req: Request) {
     console.log(results)
 
     // 3. Build context
-    const context = results.map(r => r.content).join("\n\n");
+    // const context = results.map(r => r.content).join("\n\n");
+    // 3. Improve context for Hybrid search by including only chunks that have keyword match or are very close in vector space
+    const context = results
+        .slice(0, 5)
+        .map(r => r.content)
+        .join("\n\n");
     console.log("Top chunks:", results);
 
     // 4. Build prompt

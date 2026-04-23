@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 
 type Message = {
     role: "user" | "assistant";
@@ -87,7 +88,7 @@ export default function ChatPage() {
                             : "bg-gray-100 text-black text-left"
                             }`}
                     >
-                        {msg.content}
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
                     </div>
                 ))}
 

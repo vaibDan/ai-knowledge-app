@@ -15,15 +15,29 @@ export async function GET(req: Request) {
 
     const vector = `[${embedding.join(",")}]`;
 
-    // 2. Perform similarity search
+    //     // 2. Perform similarity search
+    //     const results = await prisma.$queryRaw`
+    //   SELECT content, "documentId",
+    //         embedding <-> ${vector}::vector AS distance
+    //   FROM "Chunk"
+    //   WHERE embedding <-> ${vector}::vector < 0.6
+    //   ORDER BY embedding <-> ${vector}::vector
+    //   LIMIT 10;
+    // `;
+
+    // 3. Perform Hybrid search (embedding + keyword)
     const results = await prisma.$queryRaw`
-  SELECT content, "documentId",
-        embedding <-> ${vector}::vector AS distance
+  SELECT content,
+         embedding <-> ${vector}::vector AS distance,
+         CASE
+           WHEN content ILIKE ${'%' + query + '%'} THEN 0
+           ELSE 1
+         END AS keyword_match
   FROM "Chunk"
-  WHERE embedding <-> ${vector}::vector < 0.6
-  ORDER BY embedding <-> ${vector}::vector
+  ORDER BY keyword_match ASC, distance ASC
   LIMIT 10;
 `;
+
 
     return NextResponse.json({
         query,
