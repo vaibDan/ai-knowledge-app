@@ -6,25 +6,26 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Local Development
 
-## Database
-- Uses Docker PostgreSQL (`docker compose up -d`)
-- Connection: `postgresql://postgres:postgres@localhost:5432/ai-knowledge-app`
-
-## Prisma 7.7.0 Setup
-- Schema: `prisma/schema.prisma`
-- Config: `prisma.config.ts`
-- Generated client: `app/generated/prisma/` (custom output path)
-- After editing schema: run `npx prisma generate`
-- Client initialization uses PrismaPg adapter (see `app/lib/db.ts`)
+## Setup (Required Order)
+1. `docker compose up -d` - Start PostgreSQL
+2. `npm install` - Install dependencies
+3. `npx prisma generate` - Generate Prisma client (only after schema changes)
 
 ## Commands
 ```bash
-npm run dev     # Start dev server (port 3000)
-npm run lint   # ESLint
-npx prisma generate  # Regenerate Prisma client
+npm run dev     # Dev server (port 3000)
+npm run build   # Production build
+npm run lint   # ESLint only (no typecheck script in package.json)
 ```
 
+## Database
+- PostgreSQL via Docker: `postgresql://postgres:postgres@localhost:5432/ai-knowledge-app`
+- Prisma 7.7.0 with PrismaPg adapter (not the default driver)
+- Schema: `prisma/schema.prisma`
+- Generated client: `app/generated/prisma/` (custom output path)
+
 ## Key Files
-- `app/lib/db.ts` - Prisma client singleton
-- `app/api/route/route.ts` - Example API route
-- `prisma/schema.prisma` - Database schema
+- `app/lib/db.ts` - Prisma singleton with adapter
+- `app/api/chat/route.ts` - Main chat endpoint
+- `app/api/search/route.ts` - Search endpoint
+- `app/api/ingest/route.ts` - Document ingestion
