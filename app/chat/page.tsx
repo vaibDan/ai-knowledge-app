@@ -137,24 +137,35 @@ export default function ChatPage() {
                             <div className="mt-2 text-sm space-y-2">
                                 <p className="font-semibold text-black">Sources:</p>
 
-                                {msg.sources.map((s, idx) => (
-                                    <div key={idx} className="border p-2 rounded bg-cyan-100">
-                                        <p className="line-clamp-3">
-                                            {s.content.slice(0, 120)}...
-                                        </p>
-                                        {s.title && (
-                                            <p className="text-xs text-gray-400">
-                                                {s.title}
+                                {msg.sources.map((s, idx) => {
+                                    const relevance =
+                                        s.distance != null ? (1 / (1 + s.distance)).toFixed(2) : "n/a";
+
+                                    let label = "Low";
+                                    if (s.distance != null) {
+                                        if (s.distance < 0.5) {
+                                            label = "High";
+                                        } else if (s.distance < 1.0) {
+                                            label = "Medium";
+                                        }
+                                    }
+
+                                    return (
+                                        <div key={idx} className="rounded border bg-cyan-100 p-2">
+                                            <p className="line-clamp-3">
+                                                {s.content.slice(0, 120)}...
                                             </p>
-                                        )}
-
-                                        <p className="text-xs text-gray-700">
-                                            {/* const relevance = (1 - distance).toFixed(2); */}
-                                            relevance: {s.distance != null ? (1 - s.distance).toFixed(2) : "n/a"}
-                                        </p>
-
-                                    </div>
-                                ))}
+                                            {s.title && (
+                                                <p className="text-xs text-gray-400">
+                                                    {s.title}
+                                                </p>
+                                            )}
+                                            <p className="text-xs text-gray-700">
+                                                Relevance: {label} ({relevance})
+                                            </p>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

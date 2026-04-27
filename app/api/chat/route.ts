@@ -42,7 +42,7 @@ export async function POST(req: Request) {
             .map((m) => `${m.role}: ${m.content}`)
             .join("\n");
 
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
         const result = await model.generateContent(`
     Summarize this conversation briefly for memory:
 
@@ -111,7 +111,7 @@ Answer clearly and concisely.
 
 `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
     const stream = await model.generateContentStream(prompt);
 
     const encoder = new TextEncoder();
