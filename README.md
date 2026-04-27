@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Knowledge App
 
-## Getting Started
+A Next.js 16.2.4 application with PostgreSQL, Prisma 7.7.0, and Google Generative AI for knowledge management and chat.
 
-First, run the development server:
+## Quick Start
 
 ```bash
+# Start PostgreSQL (required)
+docker compose up -d
+
+# Install dependencies
+npm install
+
+# Generate Prisma client (after schema changes)
+npx prisma generate
+
+# Start dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Create `.env`:
+```
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/ai-knowledge-app
+GOOGLE_API_KEY=your-key-here
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Commands
 
-## Learn More
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start dev server (port 3000) |
+| `npm run build` | Production build |
+| `npm run lint` | ESLint |
+| `npx prisma generate` | Regenerate Prisma client |
 
-To learn more about Next.js, take a look at the following resources:
+## API Routes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `POST /api/chat` - Chat endpoint
+- `POST /api/search` - Search documents
+- `POST /api/ingest` - Ingest documents
+- `GET /api/test` - Test endpoint
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Tech Stack
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Next.js 16.2.4
+- Prisma 7.7.0 with PrismaPg adapter
+- PostgreSQL (Docker)
+- Google Generative AI
+- React 19 / Tailwind 4
