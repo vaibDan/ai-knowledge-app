@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 
+
 type Message = {
     role: "user" | "assistant";
     content: string;
     sources?: {
         content: string;
         distance: number;
+        score?: number;
         title?: string;
     }[];
 };
@@ -138,11 +140,20 @@ export default function ChatPage() {
                                 <p className="font-semibold text-black">Sources:</p>
 
                                 {msg.sources.map((s, idx) => {
-                                    const relevance =
-                                        s.distance != null ? (1 / (1 + s.distance)).toFixed(2) : "n/a";
+                                    const relevance = s.score != null
+                                        ? `${(s.score * 100).toFixed(1)}%`
+                                        : s.distance != null
+                                            ? (1 / (1 + s.distance)).toFixed(2)
+                                            : "n/a";
 
                                     let label = "Low";
-                                    if (s.distance != null) {
+                                    if (s.score != null) {
+                                        if (s.score >= 0.8) {
+                                            label = "High";
+                                        } else if (s.score >= 0.5) {
+                                            label = "Medium";
+                                        }
+                                    } else if (s.distance != null) {
                                         if (s.distance < 0.5) {
                                             label = "High";
                                         } else if (s.distance < 1.0) {

@@ -1,5 +1,6 @@
 import prisma from "@/app/lib/db";
 import { generateEmbedding } from "@/app/lib/embedding";
+import { rerankChunks } from "@/app/lib/rerank";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
@@ -61,21 +62,24 @@ export async function POST(req: Request) {
     const vector = `[${embedding.join(",")}]`;
 
     // 2. Retrieve relevant documents
-    const results = await prisma.$queryRaw`
+    const initialResults = await prisma.$queryRaw`
     SELECT c.content,
         c.embedding <-> ${vector}::vector AS distance,
         d.title
     FROM "Chunk" c
     JOIN "Document" d ON c."documentId" = d.id
     ORDER BY embedding <-> ${vector}::vector
-    LIMIT 3;
+    LIMIT 6;
     ` as { content: string; distance: number; title: string }[];
 
-    console.log("Retrieved chunks:", results);
-    console.log(results)
+    const reranked = await rerankChunks(question, initialResults);
+    const finalChunks = reranked.slice(0, 3);
 
+    console.log("Retrieved chunks:", initialResults);
+    console.log(initialResults.map(r => r.content));
+    console.log(finalChunks);
     // 3. Build context
-    const context = results.map(r => r.content).join("\n\n");
+    const context = finalChunks.map(r => r.content).join("\n\n");
 
     // 3. Improve context for Hybrid search by including only chunks that have keyword match or are very close in vector space
     // const context = results
