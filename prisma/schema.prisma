@@ -46,7 +46,7 @@ model Chunk {
 model Chat {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-
+  summary   String?
   messages  Message[]
 }
 

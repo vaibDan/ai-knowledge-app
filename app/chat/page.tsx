@@ -6,6 +6,11 @@ import ReactMarkdown from "react-markdown";
 type Message = {
     role: "user" | "assistant";
     content: string;
+    sources?: {
+        content: string;
+        distance: number;
+        title?: string;
+    }[];
 };
 
 export default function ChatPage() {
@@ -23,31 +28,45 @@ export default function ChatPage() {
         if (!input.trim()) return;
 
         const userMessage: Message = { role: "user", content: input };
-        setMessages((prev) => [...prev, userMessage]);
-
         const currentInput = input;
+        const assistantIndex = messages.length + 1;
+
+        setMessages((prev) => [
+            ...prev,
+            userMessage,
+            { role: "assistant", content: "" },
+        ]);
         setInput("");
         setLoading(true);
+
 
         try {
             const res = await fetch("/api/chat", {
                 method: "POST",
-                body: JSON.stringify({ question: input, chatId }),
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ question: currentInput, chatId }),
             });
 
             if (!res.ok) {
                 throw new Error("Failed to send message");
             }
-
+            // const data = await res.json();
             const reader = res.body?.getReader();
             const decoder = new TextDecoder();
 
             let aiText = "";
+            // const aiMessage: Message = {
+            //     role: "assistant",
+            //     content: data.answer,
+            //     sources: data.sources,
+            // };
+            // setMessages((prev) => [
+            //     ...prev,
+            //     aiMessage,
+            // ]);
 
-            setMessages((prev) => [
-                ...prev,
-                { role: "assistant", content: "" },
-            ]);
 
             while (true) {
                 const { done, value } = await reader!.read();
@@ -58,10 +77,30 @@ export default function ChatPage() {
 
                 setMessages((prev) => {
                     const updated = [...prev];
-                    updated[updated.length - 1].content = aiText;
+                    updated[assistantIndex] = {
+                        ...updated[assistantIndex],
+                        content: aiText,
+                    };
                     return updated;
                 });
             }
+
+            const srcRes = await fetch("/api/sources", {
+                method: "POST",
+                body: JSON.stringify({ question: currentInput }),
+            });
+
+            const srcData = await srcRes.json();
+
+            setMessages((prev) => {
+                const updated = [...prev];
+                updated[assistantIndex] = {
+                    ...updated[assistantIndex],
+                    sources: srcData.sources,
+                };
+                return updated;
+            });
+
         } catch (err) {
             console.error(err);
             setMessages((prev) => [
@@ -93,6 +132,30 @@ export default function ChatPage() {
                             msg.content
                         ) : (
                                 <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        )}
+                        {msg.role === "assistant" && msg.sources && (
+                            <div className="mt-2 text-sm space-y-2">
+                                <p className="font-semibold text-black">Sources:</p>
+
+                                {msg.sources.map((s, idx) => (
+                                    <div key={idx} className="border p-2 rounded bg-cyan-100">
+                                        <p className="line-clamp-3">
+                                            {s.content.slice(0, 120)}...
+                                        </p>
+                                        {s.title && (
+                                            <p className="text-xs text-gray-400">
+                                                {s.title}
+                                            </p>
+                                        )}
+
+                                        <p className="text-xs text-gray-700">
+                                            {/* const relevance = (1 - distance).toFixed(2); */}
+                                            relevance: {s.distance != null ? (1 - s.distance).toFixed(2) : "n/a"}
+                                        </p>
+
+                                    </div>
+                                ))}
+                            </div>
                         )}
                     </div>
                 ))}
