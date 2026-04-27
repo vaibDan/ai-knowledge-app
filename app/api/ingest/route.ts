@@ -24,13 +24,14 @@ export async function POST(req: Request) {
         const vector = `[${embedding.join(",")}]`;
 
         await prisma.$executeRaw`
-      INSERT INTO "Chunk" (id, content, embedding, "documentId", "createdAt")
+      INSERT INTO "Chunk" (id, content, embedding, "documentId", "createdAt", fts)
       VALUES (
         gen_random_uuid(),
         ${chunk},
         ${vector}::vector,
         ${doc.id},
-        NOW()
+        NOW(),
+        to_tsvector('english', ${chunk})
       )
     `;
     }

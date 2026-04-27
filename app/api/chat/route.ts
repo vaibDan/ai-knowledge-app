@@ -62,16 +62,47 @@ export async function POST(req: Request) {
     const vector = `[${embedding.join(",")}]`;
 
     // 2. Retrieve relevant documents
-    const initialResults = await prisma.$queryRaw`
-    SELECT c.content,
-        c.embedding <-> ${vector}::vector AS distance,
-        d.title
-    FROM "Chunk" c
-    JOIN "Document" d ON c."documentId" = d.id
-    ORDER BY embedding <-> ${vector}::vector
-    LIMIT 6;
-    ` as { content: string; distance: number; title: string }[];
+    // const initialResults = await prisma.$queryRaw`
+    // SELECT c.content,
+    //     c.embedding <-> ${vector}::vector AS distance,
+    //     d.title
+    // FROM "Chunk" c
+    // JOIN "Document" d ON c."documentId" = d.id
+    // ORDER BY embedding <-> ${vector}::vector
+    // LIMIT 6;
+    // ` as { content: string; distance: number; title: string }[];
 
+    const initialResults = await prisma.$queryRaw<{
+        id: string;
+        content: string;
+        title: string;
+        semantic_score: number;
+        keyword_score: number;
+    }[]>`
+SELECT *
+FROM (
+  SELECT 
+    c.id,
+    c.content,
+    d.title,
+
+    (1 / (1 + (c.embedding <-> ${vector}::vector))) AS semantic_score,
+
+    ts_rank(
+      c.fts,
+      plainto_tsquery('english', ${question})
+    ) AS keyword_score
+
+  FROM "Chunk" c
+  JOIN "Document" d ON d.id = c."documentId"
+
+) sub
+
+ORDER BY 
+  (sub.semantic_score * 0.7 + sub.keyword_score * 0.3) DESC
+
+LIMIT 8;
+`;
     const reranked = await rerankChunks(question, initialResults);
     const finalChunks = reranked.slice(0, 3);
 
