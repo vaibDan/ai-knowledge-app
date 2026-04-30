@@ -106,9 +106,10 @@ LIMIT 8;
     const reranked = await rerankChunks(question, initialResults);
     const finalChunks = reranked.slice(0, 3);
 
-    console.log("Retrieved chunks:", initialResults);
-    console.log(initialResults.map(r => r.content));
-    console.log(finalChunks);
+    // console.log("Retrieved chunks:", initialResults);
+    // console.log(initialResults.map(r => r.content));
+    // console.log(finalChunks);
+    console.log(initialResults.map(r => r.semantic_score));
     // 3. Build context
     const context = finalChunks.map(r => r.content).join("\n\n");
 
