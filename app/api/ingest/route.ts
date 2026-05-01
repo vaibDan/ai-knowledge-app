@@ -3,6 +3,8 @@ import { generateEmbedding } from "@/app/lib/embedding";
 import { chunkText } from "@/app/lib/chunk";
 import { NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
     const { title, content } = await req.json();
 

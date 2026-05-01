@@ -2,6 +2,8 @@ import prisma from "@/app/lib/db";
 import { generateEmbedding } from "@/app/lib/embedding";
 import { NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("q");

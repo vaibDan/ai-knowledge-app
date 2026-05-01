@@ -2,6 +2,7 @@
 
 import { useState, KeyboardEvent } from "react";
 import Link from "next/link";
+import Navbar from "../components/Navbar";
 
 export default function IngestPage() {
     const [title, setTitle] = useState("");
@@ -52,7 +53,9 @@ export default function IngestPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30">
-            <div className="mx-auto flex h-screen max-w-2xl items-center justify-center p-4 sm:p-6">
+            <Navbar variant="app" currentPage="ingest" />
+
+            <div className="mx-auto flex h-[calc(100vh-73px)] max-w-2xl items-center justify-center p-4 sm:p-6">
                 <div className="flex w-full flex-col rounded-2xl bg-white shadow-xl ring-1 ring-gray-200">
                     <header className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
                         <div className="flex items-center gap-3">
