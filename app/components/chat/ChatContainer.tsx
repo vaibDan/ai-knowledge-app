@@ -26,10 +26,21 @@ export default function ChatContainer() {
     const [chats, setChats] = useState<ChatPreview[]>([]);
     const [loadingChats, setLoadingChats] = useState(true);
     const bottomRef = useRef<HTMLDivElement>(null);
+    const streamBufferRef = useRef("");
+    const streamingMessageIdRef = useRef<string | null>(null);
+    const streamingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
+
+    useEffect(() => {
+        return () => {
+            if (streamingIntervalRef.current) {
+                clearInterval(streamingIntervalRef.current);
+            }
+        };
+    }, []);
 
     useEffect(() => {
         let isMounted = true;
@@ -91,8 +102,70 @@ export default function ChatContainer() {
     };
 
     const handleNewChat = () => {
+        if (streamingIntervalRef.current) {
+            clearInterval(streamingIntervalRef.current);
+            streamingIntervalRef.current = null;
+        }
+
+        streamBufferRef.current = "";
+        streamingMessageIdRef.current = null;
         setChatId(null);
         setMessages([]);
+    };
+
+    const startStreamingAnimation = (assistantMessageId: string) => {
+        if (streamingIntervalRef.current) {
+            return;
+        }
+
+        streamingIntervalRef.current = setInterval(() => {
+            const nextChunk = streamBufferRef.current.slice(0, 6);
+
+            if (!nextChunk) {
+                if (!streamBufferRef.current && streamingIntervalRef.current) {
+                    clearInterval(streamingIntervalRef.current);
+                    streamingIntervalRef.current = null;
+                }
+                return;
+            }
+
+            streamBufferRef.current = streamBufferRef.current.slice(nextChunk.length);
+
+            setMessages((prev) =>
+                prev.map((message) =>
+                    message.id === assistantMessageId
+                        ? {
+                            ...message,
+                            content: message.content + nextChunk,
+                        }
+                        : message
+                )
+            );
+
+            if (!streamBufferRef.current && streamingIntervalRef.current) {
+                clearInterval(streamingIntervalRef.current);
+                streamingIntervalRef.current = null;
+            }
+        }, 24);
+    };
+
+    const queueStreamChunk = (assistantMessageId: string, chunk: string) => {
+        if (!chunk) {
+            return;
+        }
+
+        streamBufferRef.current += chunk;
+        startStreamingAnimation(assistantMessageId);
+    };
+
+    const flushStreamingBuffer = async (assistantMessageId: string) => {
+        while (streamBufferRef.current.length > 0 || streamingIntervalRef.current) {
+            await new Promise((resolve) => setTimeout(resolve, 16));
+
+            if (streamingMessageIdRef.current !== assistantMessageId) {
+                return;
+            }
+        }
     };
 
     const handleSend = async (text: string) => {
@@ -103,19 +176,39 @@ export default function ChatContainer() {
             role: "user",
             content: text,
         };
+        const assistantMsgId = crypto.randomUUID();
+        streamBufferRef.current = "";
+        streamingMessageIdRef.current = assistantMsgId;
 
-        setMessages((prev) => [...prev, userMsg]);
+        setMessages((prev) => [
+            ...prev,
+            userMsg,
+            {
+                id: assistantMsgId,
+                role: "assistant",
+                content: "",
+                streaming: true,
+            },
+        ]);
         setLoading(true);
 
         try {
             const activeChatId = chatId ?? undefined;
-            const res = await sendMessage(text, activeChatId);
+            const res = await sendMessage(text, {
+                chatId: activeChatId,
+                onChunk: (chunk) => {
+                    queueStreamChunk(assistantMsgId, chunk);
+                },
+            });
+
+            await flushStreamingBuffer(assistantMsgId);
 
             if (res.chatId) {
-                setChatId(res.chatId);
+                const resolvedChatId = res.chatId;
+                setChatId(resolvedChatId);
 
                 setChats((prev) => {
-                    const existingChat = prev.find((chat) => chat.id === res.chatId);
+                    const existingChat = prev.find((chat) => chat.id === resolvedChatId);
                     const updatedChat: ChatPreview = existingChat
                         ? {
                             ...existingChat,
@@ -124,7 +217,7 @@ export default function ChatContainer() {
                                 : [{ id: userMsg.id, content: text, role: "user" }],
                         }
                         : {
-                            id: res.chatId,
+                            id: resolvedChatId,
                             createdAt: new Date().toISOString(),
                             summary: null,
                             messages: [{ id: userMsg.id, content: text, role: "user" }],
@@ -132,27 +225,44 @@ export default function ChatContainer() {
 
                     return [
                         updatedChat,
-                        ...prev.filter((chat) => chat.id !== res.chatId),
+                        ...prev.filter((chat) => chat.id !== resolvedChatId),
                     ];
                 });
             }
 
-            const aiMsg: Message = {
-                id: crypto.randomUUID(),
-                role: "assistant",
-                content: res.answer,
-                sources: res.sources,
-            };
-
-            setMessages((prev) => [...prev, aiMsg]);
+            setMessages((prev) =>
+                prev.map((message) =>
+                    message.id === assistantMsgId
+                        ? {
+                            ...message,
+                            content: res.answer,
+                            sources: res.sources,
+                            streaming: false,
+                        }
+                        : message
+                )
+            );
         } catch {
-            const errorMsg: Message = {
-                id: crypto.randomUUID(),
-                role: "assistant",
-                content: "Sorry, I encountered an error. Please try again.",
-            };
-            setMessages((prev) => [...prev, errorMsg]);
+            if (streamingIntervalRef.current) {
+                clearInterval(streamingIntervalRef.current);
+                streamingIntervalRef.current = null;
+            }
+
+            streamBufferRef.current = "";
+
+            setMessages((prev) =>
+                prev.map((message) =>
+                    message.id === assistantMsgId
+                        ? {
+                            ...message,
+                            content: "Sorry, I encountered an error. Please try again.",
+                            streaming: false,
+                        }
+                        : message
+                )
+            );
         } finally {
+            streamingMessageIdRef.current = null;
             setLoading(false);
         }
     };

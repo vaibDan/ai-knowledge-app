@@ -1,6 +1,13 @@
 import { ChatDetail, ChatPreview } from "../types/chat";
 
-export async function sendMessage(message: string, chatId?: string) {
+type SendMessageOptions = {
+    chatId?: string;
+    onChunk?: (chunk: string, fullText: string) => void;
+};
+
+export async function sendMessage(message: string, options: SendMessageOptions = {}) {
+    const { chatId, onChunk } = options;
+
     const res = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -27,8 +34,12 @@ export async function sendMessage(message: string, chatId?: string) {
     while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        answer += decoder.decode(value);
+        const chunk = decoder.decode(value, { stream: true });
+        answer += chunk;
+        onChunk?.(chunk, answer);
     }
+
+    answer += decoder.decode();
 
     const sourcesRes = await fetch("/api/sources", {
         method: "POST",

@@ -3,6 +3,7 @@ export type Message = {
     role: "user" | "assistant";
     content: string;
     sources?: Source[];
+    streaming?: boolean;
 };
 
 // type Message = {

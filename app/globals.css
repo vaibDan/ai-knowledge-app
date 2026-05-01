@@ -59,3 +59,19 @@ body {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+@keyframes streaming-cursor-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    opacity: 0.15;
+  }
+}
+
+.streaming-cursor {
+  animation: streaming-cursor-blink 0.9s steps(1, end) infinite;
+}
