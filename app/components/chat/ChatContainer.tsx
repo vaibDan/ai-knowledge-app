@@ -25,6 +25,7 @@ export default function ChatContainer() {
     const [chatId, setChatId] = useState<string | null>(null);
     const [chats, setChats] = useState<ChatPreview[]>([]);
     const [loadingChats, setLoadingChats] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
     const bottomRef = useRef<HTMLDivElement>(null);
     const streamBufferRef = useRef("");
     const streamingMessageIdRef = useRef<string | null>(null);
@@ -83,8 +84,15 @@ export default function ChatContainer() {
         };
     }, []);
 
+    const closeSidebarOnMobile = () => {
+        if (typeof window !== "undefined" && window.innerWidth < 1024) {
+            setSidebarOpen(false);
+        }
+    };
+
     const handleSelectChat = async (selectedChatId: string) => {
         if (selectedChatId === chatId) {
+            closeSidebarOnMobile();
             return;
         }
 
@@ -94,6 +102,7 @@ export default function ChatContainer() {
             const chat = await fetchChat(selectedChatId);
             setChatId(chat.id);
             setMessages(chat.messages);
+            closeSidebarOnMobile();
         } catch (error) {
             console.error("Failed to open chat:", error);
         } finally {
@@ -268,8 +277,23 @@ export default function ChatContainer() {
     };
 
     return (
-        <div className="flex h-full w-full overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-gray-200">
-                <aside className="hidden w-80 shrink-0 border-r border-gray-200 bg-gray-50/80 lg:flex lg:flex-col">
+        <div className="relative flex h-full w-full overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-gray-200">
+                {sidebarOpen && (
+                    <button
+                        type="button"
+                        aria-label="Close chat sidebar overlay"
+                        onClick={() => setSidebarOpen(false)}
+                        className="absolute inset-0 z-20 bg-gray-900/20 lg:hidden"
+                    />
+                )}
+
+                <aside
+                    className={`absolute inset-y-0 left-0 z-30 flex max-w-[85vw] shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-gray-50/95 transition-[transform,width,opacity] duration-200 lg:relative lg:z-0 lg:max-w-none lg:bg-gray-50/80 ${
+                        sidebarOpen
+                            ? "w-80 translate-x-0 opacity-100 lg:w-80"
+                            : "w-80 -translate-x-full opacity-100 lg:w-0 lg:translate-x-0 lg:border-r-0 lg:opacity-0"
+                    }`}
+                >
                     <div className="border-b border-gray-200 px-4 py-4">
                         <button
                             type="button"
@@ -280,6 +304,17 @@ export default function ChatContainer() {
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                             </svg>
                             New chat
+                        </button>
+                    </div>
+
+                    <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 lg:hidden">
+                        <p className="text-sm font-semibold text-gray-900">Past chats</p>
+                        <button
+                            type="button"
+                            onClick={() => setSidebarOpen(false)}
+                            className="rounded-lg border border-gray-200 px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-white hover:text-gray-900"
+                        >
+                            Close
                         </button>
                     </div>
 
@@ -321,6 +356,16 @@ export default function ChatContainer() {
                 <div className="flex min-w-0 flex-1 flex-col">
                 <header className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
                     <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setSidebarOpen((prev) => !prev)}
+                            className="rounded-xl border border-gray-200 p-2 text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
+                            aria-label={sidebarOpen ? "Hide past chats" : "Show past chats"}
+                        >
+                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 5.25h16.5m-16.5 6h16.5m-16.5 6h16.5" />
+                            </svg>
+                        </button>
                         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white">
                             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
