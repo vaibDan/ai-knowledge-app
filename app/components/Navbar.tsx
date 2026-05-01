@@ -26,7 +26,7 @@ export default function Navbar({
         <nav className="sticky top-0 z-50 border-b border-gray-100 bg-white/80 backdrop-blur-md">
             <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
                 <div className="flex items-center gap-2">
-                    <Link href={isAppNav ? "/chat" : "/"} className="flex items-center gap-2">
+                    <Link href="/" className="flex items-center gap-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
                             AI
                         </div>
