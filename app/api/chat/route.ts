@@ -121,6 +121,7 @@ FROM (
 
   FROM "Chunk" c
   JOIN "Document" d ON d.id = c."documentId"
+   WHERE d."userId" = ${userId}
 
 ) sub
 

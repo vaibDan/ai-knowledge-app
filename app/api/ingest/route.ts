@@ -1,11 +1,22 @@
 import prisma from "@/app/lib/db";
 import { generateEmbedding } from "@/app/lib/embedding";
 import { chunkText } from "@/app/lib/chunk";
+import { auth } from "@/auth"
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
+    const session = await auth();
+    const userId = session?.user?.id;
+
+    if (!userId) {
+        return NextResponse.json(
+            { error: "Unauthorized" },
+            { status: 401 }
+        );
+    }
+
     const { title, content } = await req.json();
 
     if (!title || !content) {
@@ -16,7 +27,7 @@ export async function POST(req: Request) {
     }
 
     const doc = await prisma.document.create({
-        data: { title, content },
+        data: { title, content, userId },
     });
 
     const chunks = chunkText(content);
