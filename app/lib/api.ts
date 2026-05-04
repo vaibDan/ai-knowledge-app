@@ -79,3 +79,16 @@ export async function fetchChat(chatId: string) {
 
     return res.json() as Promise<ChatDetail>;
 }
+
+export async function deleteChat(chatId: string) {
+    const res = await fetch(`/api/chats/${chatId}`, {
+        method: "DELETE",
+    });
+
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({ error: "Failed to delete chat" }));
+        throw new Error(error.error || "Failed to delete chat");
+    }
+
+    return res.json() as Promise<{ success: boolean }>;
+}

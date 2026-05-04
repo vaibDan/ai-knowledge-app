@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { ChatPreview, Message } from "../../types/chat";
-import { fetchChat, fetchChats, sendMessage } from "../../lib/api";
+import { deleteChat, fetchChat, fetchChats, sendMessage } from "../../lib/api";
 import MessageList from "./MessageList";
 import ChatInput from "./ChatInput";
 
@@ -26,6 +26,7 @@ export default function ChatContainer() {
     const [chats, setChats] = useState<ChatPreview[]>([]);
     const [loadingChats, setLoadingChats] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [deletingChatId, setDeletingChatId] = useState<string | null>(null);
     const bottomRef = useRef<HTMLDivElement>(null);
     const streamBufferRef = useRef("");
     const streamingMessageIdRef = useRef<string | null>(null);
@@ -120,6 +121,37 @@ export default function ChatContainer() {
         streamingMessageIdRef.current = null;
         setChatId(null);
         setMessages([]);
+    };
+
+    const handleDeleteChat = async (targetChatId: string) => {
+        setDeletingChatId(targetChatId);
+
+        try {
+            await deleteChat(targetChatId);
+
+            const remainingChats = chats.filter((chat) => chat.id !== targetChatId);
+            setChats(remainingChats);
+
+            if (chatId !== targetChatId) {
+                return;
+            }
+
+            const nextChat = remainingChats[0];
+
+            if (!nextChat) {
+                setChatId(null);
+                setMessages([]);
+                return;
+            }
+
+            const nextFullChat = await fetchChat(nextChat.id);
+            setChatId(nextFullChat.id);
+            setMessages(nextFullChat.messages);
+        } catch (error) {
+            console.error("Failed to delete chat:", error);
+        } finally {
+            setDeletingChatId(null);
+        }
     };
 
     const startStreamingAnimation = (assistantMessageId: string) => {
@@ -329,23 +361,51 @@ export default function ChatContainer() {
                                     const isActive = chat.id === chatId;
 
                                     return (
-                                        <button
+                                        <div
                                             key={chat.id}
-                                            type="button"
-                                            onClick={() => void handleSelectChat(chat.id)}
                                             className={`w-full rounded-xl px-3 py-3 text-left transition-colors ${
                                                 isActive
                                                     ? "bg-white shadow-sm ring-1 ring-indigo-200"
                                                     : "hover:bg-white"
                                             }`}
                                         >
-                                            <p className="truncate text-sm font-medium text-gray-900">
-                                                {getChatLabel(chat)}
-                                            </p>
-                                            <p className="mt-1 text-xs text-gray-500">
-                                                {new Date(chat.createdAt).toLocaleDateString()}
-                                            </p>
-                                        </button>
+                                            <div className="flex items-start gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => void handleSelectChat(chat.id)}
+                                                    className="min-w-0 flex-1 text-left"
+                                                >
+                                                    <p className="truncate text-sm font-medium text-gray-900">
+                                                        {getChatLabel(chat)}
+                                                    </p>
+                                                    <p className="mt-1 text-xs text-gray-500">
+                                                        {new Date(chat.createdAt).toLocaleDateString()}
+                                                    </p>
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    aria-label="Delete chat"
+                                                    disabled={deletingChatId === chat.id}
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        void handleDeleteChat(chat.id);
+                                                    }}
+                                                    className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                                >
+                                                    {deletingChatId === chat.id ? (
+                                                        <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                                        </svg>
+                                                    ) : (
+                                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 7.5h12m-9.75 0v-.75A1.5 1.5 0 019.75 5.25h4.5a1.5 1.5 0 011.5 1.5v.75m-8.25 0v9.75A1.5 1.5 0 009 18.75h6a1.5 1.5 0 001.5-1.5V7.5M10.5 11.25v3.75m3-3.75v3.75" />
+                                                        </svg>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
                                     );
                                 })}
                             </div>
