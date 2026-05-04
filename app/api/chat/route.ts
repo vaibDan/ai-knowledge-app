@@ -1,33 +1,59 @@
 import prisma from "@/app/lib/db";
 import { generateEmbedding } from "@/app/lib/embedding";
 import { rerankChunks } from "@/app/lib/rerank";
+import { auth } from "@/auth";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+
+export const runtime = "nodejs";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
 const RECENT_MESSAGE_LIMIT = 6;
 
 export async function POST(req: Request) {
+    const session = await auth();
+
+    const userId = session?.user?.id;
+
+    if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { question, chatId } = await req.json();
+
+
+    // Create new chat if no chatId provided
+    let chat;
+    if (!chatId) {
+        chat = await prisma.chat.create({
+            data: {
+                userId,
+            },
+        });
+    } else {
+        chat = await prisma.chat.findUnique({ where: { id: chatId } });
+
+        if (!chat || chat.userId !== userId) {
+            return Response.json({ error: "Forbidden" }, { status: 403 });
+        }
+    }
 
     if (!question) {
         return NextResponse.json({ error: "Question required" }, { status: 400 });
     }
-    const chat = await prisma.chat.upsert({ // update the chat before adding the message
-        where: { id: chatId },
-        update: {},
-        create: { id: chatId },
-    });
+
+    const resolvedChatId = chat.id;
+
     await prisma.message.create({
         data: {
             role: "user",
             content: question,
-            chatId,
+            chatId: resolvedChatId,
         },
     });
 
     const history = await prisma.message.findMany({
-        where: { chatId },
+        where: { chatId: resolvedChatId },
         orderBy: { createdAt: "asc" },
         // We keep the full chat history here so we can summarize older turns
         // once the conversation grows beyond the recent window.
@@ -53,7 +79,7 @@ export async function POST(req: Request) {
         summary = await response.text();
 
         await prisma.chat.update({
-            where: { id: chatId },
+            where: { id: resolvedChatId },
             data: { summary },
         });
     }
@@ -95,6 +121,7 @@ FROM (
 
   FROM "Chunk" c
   JOIN "Document" d ON d.id = c."documentId"
+   WHERE d."userId" = ${userId}
 
 ) sub
 
@@ -166,7 +193,7 @@ Answer clearly and concisely.
                     data: {
                         role: "assistant",
                         content: fullAnswer,
-                        chatId,
+                        chatId: resolvedChatId,
                     },
                 });
             } catch (error) {
@@ -182,6 +209,7 @@ Answer clearly and concisely.
     return new Response(readable, {
         headers: {
             "Content-Type": "text/plain",
+            "X-Chat-Id": resolvedChatId,
         },
     });
 }

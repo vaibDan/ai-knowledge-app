@@ -1,45 +1,10 @@
-
-
-// export default function Home() {
-//   return (
-//     <div>
-
-//     </div>
-//   );
-// }
-
-
-// app/page.tsx
 import Link from "next/link";
+import Navbar from "./components/Navbar";
 
 export default function Home() {
-  return (
-    <main className="min-h-screen bg-white">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 border-b border-gray-100 bg-white/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold text-sm">
-              AI
-            </div>
-            <span className="text-lg font-semibold text-gray-900">Knowledge</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link
-              href="#features"
-              className="hidden text-sm font-medium text-gray-600 hover:text-gray-900 sm:inline"
-            >
-              Features
-            </Link>
-            <Link
-              href="/chat"
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
-            >
-              Get Started
-            </Link>
-          </div>
-        </div>
-      </nav>
+    return (
+        <main className="min-h-screen bg-white">
+            <Navbar variant="home" />
 
       {/* Hero Section */}
       <section className="relative overflow-hidden px-6 pt-20 pb-24 sm:pt-32 sm:pb-32">

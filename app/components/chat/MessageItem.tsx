@@ -8,6 +8,8 @@ interface MessageItemProps {
 
 export default function MessageItem({ message }: MessageItemProps) {
     const isUser = message.role === "user";
+    const isStreaming = !isUser && message.streaming;
+    const assistantContent = message.content || (isStreaming ? "Thinking" : "");
 
     return (
         <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
@@ -22,31 +24,40 @@ export default function MessageItem({ message }: MessageItemProps) {
                     {isUser ? (
                         <p>{message.content}</p>
                     ) : (
-                        <ReactMarkdown
-                            components={{
-                                p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                                a: ({ href, children }) => (
-                                    <a href={href} className="text-indigo-600 hover:underline">
-                                        {children}
-                                    </a>
-                                ),
-                                code: ({ children }) => (
-                                    <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs">
-                                        {children}
-                                    </code>
-                                ),
-                                pre: ({ children }) => (
-                                    <pre className="mb-2 overflow-x-auto rounded-lg bg-gray-100 p-3">
-                                        {children}
-                                    </pre>
-                                ),
-                                ul: ({ children }) => <ul className="mb-2 list-disc pl-4">{children}</ul>,
-                                ol: ({ children }) => <ol className="mb-2 list-decimal pl-4">{children}</ol>,
-                                li: ({ children }) => <li className="mb-1">{children}</li>,
-                            }}
-                        >
-                            {message.content}
-                        </ReactMarkdown>
+                        <div>
+                            <ReactMarkdown
+                                components={{
+                                    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                                    a: ({ href, children }) => (
+                                        <a href={href} className="text-indigo-600 hover:underline">
+                                            {children}
+                                        </a>
+                                    ),
+                                    code: ({ children }) => (
+                                        <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs">
+                                            {children}
+                                        </code>
+                                    ),
+                                    pre: ({ children }) => (
+                                        <pre className="mb-2 overflow-x-auto rounded-lg bg-gray-100 p-3">
+                                            {children}
+                                        </pre>
+                                    ),
+                                    ul: ({ children }) => <ul className="mb-2 list-disc pl-4">{children}</ul>,
+                                    ol: ({ children }) => <ol className="mb-2 list-decimal pl-4">{children}</ol>,
+                                    li: ({ children }) => <li className="mb-1">{children}</li>,
+                                }}
+                            >
+                                {assistantContent}
+                            </ReactMarkdown>
+
+                            {isStreaming && (
+                                <span
+                                    aria-label="Assistant is streaming"
+                                    className="streaming-cursor ml-1 inline-block h-4 w-2 rounded-sm bg-indigo-500 align-middle"
+                                />
+                            )}
+                        </div>
                     )}
                 </div>
 
