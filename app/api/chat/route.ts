@@ -112,7 +112,7 @@ FROM (
     c.content,
     d.title,
 
-    (1 / (1 + (c.embedding <-> ${vector}::vector))) AS semantic_score,
+    (1 / (1 + (c.embedding <=> ${vector}::vector))) AS semantic_score,
 
     ts_rank(
       c.fts,
@@ -130,12 +130,42 @@ ORDER BY
 
 LIMIT 8;
 `;
-    const reranked = await rerankChunks(question, initialResults);
-    const finalChunks = reranked.slice(0, 3);
 
-    // console.log("Retrieved chunks:", initialResults);
-    // console.log(initialResults.map(r => r.content));
-    // console.log(finalChunks);
+    if (initialResults.length === 0) {
+        const emptyMessage = "You have no documents uploaded yet. Please add documents first to use the knowledge assistant.";
+
+        await prisma.message.create({
+            data: {
+                role: "assistant",
+                content: emptyMessage,
+                chatId: resolvedChatId,
+            },
+        });
+
+        return new Response(emptyMessage, {
+            headers: {
+                "Content-Type": "text/plain",
+                "X-Chat-Id": resolvedChatId,
+            },
+        });
+    }
+
+    const reranked = await rerankChunks(question, initialResults);
+    const finalChunks = reranked
+        .slice(0, 3)
+        .filter(chunk => chunk.relevanceScore > 0.3);
+    console.log("finalChunks after filter:", finalChunks.length);
+
+    console.log("Embedding length:", embedding.length);
+    console.log("Embedding sample:", embedding.slice(0, 5));
+    // Should see actual numbers like [0.023, -0.14, 0.87, ...]
+    // Not all zeros like [0, 0, 0, 0, 0]
+    console.log("Retrieved chunks:", initialResults);
+    console.log(initialResults.map(r => r.content));
+    console.log("finalchunks:", finalChunks);
+    // console.log(userId);
+    console.log("userId:", userId);
+    console.log("initialResults count:", initialResults.length);
     console.log(initialResults.map(r => r.semantic_score));
     // 3. Build context
     const context = finalChunks.map(r => r.content).join("\n\n");
@@ -206,10 +236,24 @@ Answer clearly and concisely.
         },
     });
 
+    // After finalChunks is computed
+    const sourcesPayload = Buffer.from(
+        JSON.stringify(
+            finalChunks.map(c => ({
+                id: c.id,
+                content: c.content,
+                title: c.title,
+                score: c.relevanceScore,
+            }))
+        )
+    ).toString("base64");
+
+
     return new Response(readable, {
         headers: {
             "Content-Type": "text/plain",
             "X-Chat-Id": resolvedChatId,
+            "X-Sources": sourcesPayload,
         },
     });
 }

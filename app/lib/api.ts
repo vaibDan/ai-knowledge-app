@@ -23,6 +23,11 @@ export async function sendMessage(message: string, options: SendMessageOptions =
 
     const resolvedChatId = res.headers.get("X-Chat-Id") ?? chatId ?? null;
 
+    const sourcesHeader = res.headers.get("X-Sources");
+    const sources = sourcesHeader
+        ? JSON.parse(Buffer.from(sourcesHeader, "base64").toString("utf-8"))
+        : [];
+
     const reader = res.body?.getReader();
     const decoder = new TextDecoder();
     let answer = "";
@@ -41,15 +46,9 @@ export async function sendMessage(message: string, options: SendMessageOptions =
 
     answer += decoder.decode();
 
-    const sourcesRes = await fetch("/api/sources", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: message }),
-    });
 
-    const sourcesData = await sourcesRes.json();
 
-    return { answer, sources: sourcesData.sources || [], chatId: resolvedChatId };
+    return { answer, sources, chatId: resolvedChatId };
 }
 
 export async function fetchChats() {

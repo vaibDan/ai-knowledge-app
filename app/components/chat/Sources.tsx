@@ -4,11 +4,6 @@ interface SourcesProps {
     sources: Source[];
 }
 
-function normalizeScore(distance: number) {
-    // convert distance → similarity (0 to 1 range approx)
-    return 1 / (1 + distance);
-}
-
 function getRelevanceLabel(score: number): { label: string; color: string } {
     if (score >= 0.7) return { label: "High", color: "text-emerald-600" };
     if (score >= 0.4) return { label: "Medium", color: "text-amber-600" };
@@ -26,8 +21,8 @@ export default function SourcesList({ sources }: SourcesProps) {
             </div>
             <div className="space-y-2">
                 {sources.map((s) => {
-                    const similarity = normalizeScore(s.score);
-                    const relevance = getRelevanceLabel(similarity);
+                    // const similarity = normalizeScore(s.score);
+                    const relevance = getRelevanceLabel(s.score);
                     return (
                         <div
                             key={s.id}
@@ -38,7 +33,7 @@ export default function SourcesList({ sources }: SourcesProps) {
                             </p>
                             <div className="flex items-center justify-between">
                                 <span className={`text-xs font-medium ${relevance.color}`}>
-                                    {relevance.label} • {(similarity * 100).toFixed(0)}% match
+                                    {relevance.label} • {(s.score * 100).toFixed(0)}% match
                                 </span>
                             </div>
                         </div>
