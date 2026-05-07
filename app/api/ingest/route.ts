@@ -47,6 +47,7 @@ export async function POST(req: Request) {
         to_tsvector('english', ${chunk})
       )
     `;
+        await new Promise(resolve => setTimeout(resolve, 200)); 
     }
 
     return NextResponse.json({ success: true });
