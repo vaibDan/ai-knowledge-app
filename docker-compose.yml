@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: ankane/pgvector        # ← your exact image
+    container_name: ai_knowledge_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ai_knowledge
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai_knowledge_app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/ai_knowledge
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      COHERE_API_KEY: ${COHERE_API_KEY}
+      AUTH_SECRET: ${AUTH_SECRET}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      AUTH_TRUST_HOST: ${AUTH_TRUST_HOST}
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
