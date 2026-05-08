@@ -212,12 +212,14 @@ export default function ChatContainer() {
     const handleSend = async (text: string) => {
         if (!text.trim()) return;
 
+        const ID = Math.random().toString(36).substring(2) + Date.now().toString(36);
+
         const userMsg: Message = {
-            id: crypto.randomUUID(),
+            id: ID,
             role: "user",
             content: text,
         };
-        const assistantMsgId = crypto.randomUUID();
+        const assistantMsgId = ID + "-assistant";
         streamBufferRef.current = "";
         streamingMessageIdRef.current = assistantMsgId;
 
