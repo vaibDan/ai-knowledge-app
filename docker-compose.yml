@@ -36,5 +36,17 @@ services:
     ports:
       - "3000:3000"
 
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+    command: http --domain=ravishing-annika-unsmilingly.ngrok-free.dev app:3000
+    ports:
+      - "4040:4040"
+
 volumes:
   postgres_data:
