@@ -85,7 +85,11 @@ export default function IngestPage() {
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-gray-700">
                                     Document Title
+                                    <p className="text-xs text-gray-500">
+                                        (Paste or type text content only)
+                                    </p>
                                 </label>
+
                                 <input
                                     type="text"
                                     placeholder="e.g., Company FAQ, Product Documentation"
@@ -112,11 +116,10 @@ export default function IngestPage() {
 
                             {message && (
                                 <div
-                                    className={`flex items-center gap-2 rounded-lg px-4 py-3 text-sm ${
-                                        message.type === "success"
-                                            ? "bg-emerald-50 text-emerald-700"
-                                            : "bg-red-50 text-red-700"
-                                    }`}
+                                    className={`flex items-center gap-2 rounded-lg px-4 py-3 text-sm ${message.type === "success"
+                                        ? "bg-emerald-50 text-emerald-700"
+                                        : "bg-red-50 text-red-700"
+                                        }`}
                                 >
                                     {message.type === "success" ? (
                                         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -154,19 +154,21 @@ LIMIT 8;
     const finalChunks = reranked
         .slice(0, 3)
         .filter(chunk => chunk.relevanceScore > 0.3);
-    console.log("finalChunks after filter:", finalChunks.length);
 
-    console.log("Embedding length:", embedding.length);
-    console.log("Embedding sample:", embedding.slice(0, 5));
-    // Should see actual numbers like [0.023, -0.14, 0.87, ...]
-    // Not all zeros like [0, 0, 0, 0, 0]
-    console.log("Retrieved chunks:", initialResults);
-    console.log(initialResults.map(r => r.content));
-    console.log("finalchunks:", finalChunks);
-    // console.log(userId);
-    console.log("userId:", userId);
-    console.log("initialResults count:", initialResults.length);
-    console.log(initialResults.map(r => r.semantic_score));
+    // console.log("finalChunks after filter:", finalChunks.length);
+
+    // console.log("Embedding length:", embedding.length);
+    // console.log("Embedding sample:", embedding.slice(0, 5));
+    // // Should see actual numbers like [0.023, -0.14, 0.87, ...]
+    // // Not all zeros like [0, 0, 0, 0, 0]
+    // console.log("Retrieved chunks:", initialResults);
+    // console.log(initialResults.map(r => r.content));
+    // console.log("finalchunks:", finalChunks);
+    // // console.log(userId);
+    // console.log("userId:", userId);
+    // console.log("initialResults count:", initialResults.length);
+    // console.log(initialResults.map(r => r.semantic_score));
+
     // 3. Build context
     const context = finalChunks.map(r => r.content).join("\n\n");
 
